@@ -15,6 +15,8 @@ users = sqlalchemy.Table(
     sqlalchemy.Column("is_verified", sqlalchemy.Boolean, default=False),
     sqlalchemy.Column("verification_token", sqlalchemy.String, nullable=True),
     sqlalchemy.Column("verification_token_expires", sqlalchemy.DateTime, nullable=True),
+    sqlalchemy.Column("reset_password_token", sqlalchemy.String, nullable=True),
+    sqlalchemy.Column("reset_password_token_expires", sqlalchemy.DateTime, nullable=True),
 )
 
 # SQLAlchemy ORM model
@@ -28,3 +30,5 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String, nullable=True)
     verification_token_expires = Column(DateTime, nullable=True)
+    reset_password_token = Column(String, nullable=True)
+    reset_password_token_expires = Column(DateTime, nullable=True)

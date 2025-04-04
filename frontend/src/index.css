@@ -180,29 +180,65 @@ body {
 
 .input-with-icon {
   position: relative;
+  display: block;
 }
 
-.input-with-icon svg {
+.input-with-icon svg:first-of-type {
   position: absolute;
-  left: 0.75rem;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-light);
+  z-index: 1;
+  width: 16px;
+  height: 16px;
 }
 
-.input-with-icon input {
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
+.input-with-icon input,
+.form-input {
   width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
   border: 1px solid var(--border-color);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   transition: border-color 0.2s ease;
+  background-color: white;
 }
 
-.input-with-icon input:focus {
+.input-with-icon input:focus,
+.form-input:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* Password visibility toggle button styling */
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+}
+
+.password-toggle-btn:hover {
+  color: var(--primary-color);
+}
+
+/* Adjust padding for password inputs to account for the eye icon */
+.input-with-icon input[type="password"],
+.input-with-icon input[type="text"] {
+  padding-right: 40px;
 }
 
 .auth-button {
@@ -1863,5 +1899,146 @@ body {
   100% {
     opacity: 0;
     transform: scale(40, 40);
+  }
+}
+
+/* ReadMore Page Styles */
+.readmore-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.readmore-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.readmore-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+}
+
+.readmore-header .subtitle {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.video-container {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 3rem;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.readmore-content {
+  margin-bottom: 3rem;
+}
+
+.readmore-content h2 {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: var(--primary-color);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.readmore-page .feature-card {
+  background-color: var(--card-background);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.readmore-page .feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+}
+
+.readmore-page .feature-icon {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.readmore-page .feature-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.readmore-page .cta-section {
+  text-align: center;
+  background-color: var(--secondary-light);
+  padding: 3rem;
+  border-radius: 8px;
+}
+
+.readmore-page .cta-section h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+.readmore-page .cta-section p {
+  font-size: 1.1rem;
+  color: var(--text-color);
+  max-width: 700px;
+  margin: 0 auto 2rem;
+}
+
+.readmore-page .cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .readmore-header h1 {
+    font-size: 2rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .readmore-page .cta-section {
+    padding: 2rem 1rem;
+  }
+  
+  .readmore-page .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .readmore-page .cta-buttons .hero-button,
+  .readmore-page .cta-buttons .secondary-button {
+    width: 100%;
+    max-width: 300px;
   }
 }

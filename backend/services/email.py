@@ -101,4 +101,47 @@ async def send_verification_email(to_email: str, verification_token: str) -> boo
     """
     
     # Send email
+    return await send_email(to_email, subject, html_content)
+
+async def send_password_reset_email(to_email: str, reset_token: str) -> bool:
+    """
+    Send a password reset email with a token link.
+    
+    Args:
+        to_email: Recipient email address
+        reset_token: Password reset token
+        
+    Returns:
+        bool: True if email was sent successfully, False otherwise
+    """
+    # Create reset link
+    reset_link = f"{FRONTEND_URL}/reset-password?token={reset_token}"
+    
+    # Create email subject
+    subject = "Reset Your Password"
+    
+    # Create email content
+    html_content = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+            <h2 style="color: #2c3e50; margin-bottom: 20px;">Reset Your Password</h2>
+            <p>You have requested to reset your password. Please click the button below to set a new password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{reset_link}" style="background-color: #3498db; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
+            </div>
+            <p>Or copy and paste this link in your browser:</p>
+            <p style="background-color: #f8f9fa; padding: 10px; border-radius: 4px; word-break: break-all;">
+                {reset_link}
+            </p>
+            <p>This link will expire in 24 hours.</p>
+            <p>If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+            <p style="font-size: 12px; color: #777;">This is an automated email. Please do not reply.</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    # Send email
     return await send_email(to_email, subject, html_content) 

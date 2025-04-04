@@ -39,3 +39,4 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 # Token expiration settings
 VERIFICATION_TOKEN_EXPIRE_HOURS = 24
+RESET_PASSWORD_TOKEN_EXPIRE_HOURS = 24

@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from apps.notifications.websocket import broadcast_new_user
 from apps.users import crud, schemas, services
 from config.database import database
-from services.email import send_verification_email
+from services.email import send_verification_email, send_password_reset_email
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -165,3 +165,63 @@ async def resend_verification(email_data: schemas.UserBase):
             return {"success": False, "message": "Failed to send verification email. Please try again later."}
     
     return {"success": False, "message": "Failed to generate verification token."}
+
+@router.post(
+    "/forgot-password",
+    response_model=schemas.VerificationResponse,
+    summary="Request password reset",
+    description="""
+    Request a password reset link for a registered email address.
+    
+    - A reset link will be sent to the provided email if it exists and is verified.
+    - For security reasons, a success message is always returned regardless of whether the email exists.
+    """
+)
+async def forgot_password(email_data: schemas.ForgotPasswordRequest):
+    """Request password reset."""
+    logger.info(f"Password reset request received for email: {email_data.email}")
+    
+    success, message, token = await crud.generate_password_reset_token(email_data.email)
+    
+    if not success:
+        logger.warning(f"Password reset generation failed: {message}")
+        return {"success": False, "message": message}
+    
+    # Send password reset email
+    if token:
+        logger.info(f"Sending password reset email to: {email_data.email}")
+        email_sent = await send_password_reset_email(email_data.email, token)
+        if email_sent:
+            logger.info(f"Password reset email sent successfully to: {email_data.email}")
+            return {"success": True, "message": "Password reset link has been sent to your email."}
+        else:
+            logger.warning(f"Failed to send password reset email to: {email_data.email}")
+            return {"success": False, "message": "Failed to send password reset email. Please try again later."}
+    
+    return {"success": False, "message": "Failed to generate password reset token."}
+
+@router.post(
+    "/reset-password",
+    response_model=schemas.VerificationResponse,
+    summary="Reset password with token",
+    description="""
+    Reset password using the token received via email.
+    
+    - The token must be valid and not expired.
+    - The new password must be at least 8 characters long.
+    - Once the password is reset, the user can log in with the new password.
+    """
+)
+async def reset_password(reset_data: schemas.ResetPasswordRequest):
+    """Reset password with token."""
+    logger.info(f"Password reset request received with token length: {len(reset_data.token)}")
+    logger.info(f"Password reset token preview: {reset_data.token[:10]}...")
+    
+    success, message = await crud.reset_password(reset_data.token, reset_data.password)
+    
+    if not success:
+        logger.warning(f"Password reset failed: {message}")
+        return {"success": False, "message": message}
+    
+    logger.info("Password reset successful")
+    return {"success": True, "message": message}

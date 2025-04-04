@@ -6,36 +6,63 @@ Run this script from the backend container with: python /app/scripts/delete_all_
 
 import asyncio
 import sys
-import sqlalchemy
+import os
+import logging
+import sqlite3
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Add parent directory to path for imports
 sys.path.insert(0, "/app")
 
-from apps.users.models import users
-from config.database import database
+from config.settings import DATABASE_URL
 
 async def delete_all_users():
     """Delete all users from the database."""
     try:
-        # Connect to the database
-        await database.connect()
+        logger.info("Connecting to database...")
+        
+        # Get the SQLite file path from DATABASE_URL
+        if DATABASE_URL.startswith('sqlite:///'):
+            db_path = DATABASE_URL.replace('sqlite:///', '')
+            logger.info(f"Using SQLite database at {db_path}")
+        else:
+            raise ValueError(f"Unsupported database type: {DATABASE_URL}")
+        
+        # Connect directly to SQLite
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Check if users table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users';")
+        table_exists = cursor.fetchone()
+        
+        if not table_exists:
+            logger.info("Users table does not exist, nothing to delete")
+            conn.close()
+            return
         
         # Get count of users before deletion
-        count_query = "SELECT COUNT(*) FROM users"
-        user_count = await database.fetch_val(count_query)
-        print(f"Found {user_count} users in the database.")
+        cursor.execute("SELECT COUNT(*) FROM users")
+        count = cursor.fetchone()[0]
+        logger.info(f"Found {count} users in the database")
         
         # Delete all users
-        delete_query = "DELETE FROM users"
-        await database.execute(delete_query)
+        if count > 0:
+            logger.info("Deleting all users...")
+            cursor.execute("DELETE FROM users")
+            conn.commit()
+            logger.info(f"✅ Successfully deleted {count} users from the database")
+        else:
+            logger.info("No users to delete")
         
-        print(f"✅ Successfully deleted {user_count} users from the database.")
+        # Close the connection
+        conn.close()
         
     except Exception as e:
-        print(f"❌ Error deleting users: {e}")
-    finally:
-        # Close the database connection
-        await database.disconnect()
+        logger.error(f"❌ Error deleting users: {e}")
 
 if __name__ == "__main__":
     # Run the async function

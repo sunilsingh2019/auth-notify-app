@@ -78,3 +78,33 @@ class VerificationResponse(BaseModel):
             }
         }
     }
+
+# Forgot Password Request Schema
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr = Field(..., description="Email address for password reset")
+    
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "email": "user@example.com"
+            }
+        }
+    }
+
+# Reset Password Request Schema
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., description="Password reset token")
+    password: str = Field(
+        ..., 
+        min_length=8,
+        description="New password, must be at least 8 characters long"
+    )
+    
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "token": "abcdef123456",
+                "password": "newSecurePassword123"
+            }
+        }
+    }

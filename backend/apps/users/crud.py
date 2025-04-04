@@ -6,7 +6,10 @@ import logging
 from apps.users.models import users
 from config.database import database
 from config.security import get_password_hash, verify_password
-from config.settings import VERIFICATION_TOKEN_EXPIRE_HOURS
+from config.settings import VERIFICATION_TOKEN_EXPIRE_HOURS, RESET_PASSWORD_TOKEN_EXPIRE_HOURS
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 async def get_user_by_email(email: str) -> Optional[dict]:
     """Get user by email."""
@@ -69,7 +72,6 @@ async def verify_email(token: str) -> Tuple[bool, str]:
         Tuple[bool, str]: (success, message)
     """
     # Add debug logging
-    logger = logging.getLogger(__name__)
     logger.info(f"Verifying email with token: {token[:10]}...")
     
     # Find user with this token
@@ -152,3 +154,80 @@ async def generate_new_verification_token(email: str) -> Tuple[bool, str, Option
     await database.execute(update_query)
     
     return True, "New verification token generated.", new_token
+
+async def generate_password_reset_token(email: str) -> Tuple[bool, str, Optional[str]]:
+    """
+    Generate a password reset token for a user.
+    
+    Args:
+        email: User's email address
+        
+    Returns:
+        Tuple[bool, str, Optional[str]]: (success, message, token)
+    """
+    logger.info(f"Generating password reset token for email: {email}")
+    
+    user = await get_user_by_email(email)
+    
+    if not user:
+        logger.warning(f"Password reset requested for non-existent email: {email}")
+        return False, "If your email exists in our system, you will receive a password reset link.", None
+    
+    if not user["is_verified"]:
+        logger.warning(f"Password reset requested for unverified email: {email}")
+        return False, "This account has not been verified. Please verify your email first.", None
+    
+    # Generate new token
+    reset_token = secrets.token_urlsafe(32)
+    token_expires = datetime.utcnow() + timedelta(hours=RESET_PASSWORD_TOKEN_EXPIRE_HOURS)
+    
+    # Update user with new token
+    update_query = users.update().where(users.c.id == user["id"]).values(
+        reset_password_token=reset_token,
+        reset_password_token_expires=token_expires
+    )
+    await database.execute(update_query)
+    logger.info(f"Password reset token generated for user: {email}")
+    
+    return True, "Password reset link has been sent to your email.", reset_token
+
+async def reset_password(token: str, new_password: str) -> Tuple[bool, str]:
+    """
+    Reset a user's password using the reset token.
+    
+    Args:
+        token: Password reset token
+        new_password: New password to set
+        
+    Returns:
+        Tuple[bool, str]: (success, message)
+    """
+    logger.info(f"Resetting password with token: {token[:10]}...")
+    
+    # Find user with this token
+    query = users.select().where(users.c.reset_password_token == token)
+    user = await database.fetch_one(query)
+    
+    if not user:
+        logger.warning(f"Invalid password reset token: {token[:10]}... - No matching user found")
+        return False, "Invalid password reset token."
+    
+    # Check if token is expired
+    current_time = datetime.utcnow()
+    if user["reset_password_token_expires"] < current_time:
+        logger.warning(f"Password reset token expired for user {user['email']}. Expired at: {user['reset_password_token_expires']}, Current time: {current_time}")
+        return False, "Password reset token has expired."
+    
+    # Hash the new password
+    hashed_password = get_password_hash(new_password)
+    
+    # Update user's password and clear token
+    update_query = users.update().where(users.c.id == user["id"]).values(
+        hashed_password=hashed_password,
+        reset_password_token=None,
+        reset_password_token_expires=None
+    )
+    await database.execute(update_query)
+    logger.info(f"Successfully reset password for user {user['email']}")
+    
+    return True, "Password has been reset successfully. You can now log in with your new password."
