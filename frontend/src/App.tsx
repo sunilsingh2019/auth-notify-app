@@ -18,7 +18,6 @@ import ResendVerification from './pages/ResendVerification';
 import NotificationDebug from './pages/NotificationDebug';
 import ForgotPassword from './pages/ForgotPassword.tsx';
 import ResetPassword from './pages/ResetPassword.tsx';
-import ReadMore from './pages/ReadMore';
 
 function App() {
   return (
@@ -56,7 +55,6 @@ function App() {
                 <Route path="/resend-verification" element={<ResendVerification />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/read-more" element={<ReadMore />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
