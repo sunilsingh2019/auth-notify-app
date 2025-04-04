@@ -15,6 +15,7 @@ import Dashboard from './pages/Dashboard';
 import Notifications from './pages/Notifications';
 import VerifyEmail from './pages/VerifyEmail';
 import ResendVerification from './pages/ResendVerification';
+import NotificationDebug from './pages/NotificationDebug';
 
 function App() {
   return (
@@ -41,6 +42,10 @@ function App() {
                       <Notifications />
                     </ProtectedRoute>
                   } 
+                />
+                <Route 
+                  path="/notification-debug" 
+                  element={<NotificationDebug />} 
                 />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />

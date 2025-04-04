@@ -15,14 +15,15 @@ export interface Notification {
   };
 }
 
-// NotificationContext type
-interface NotificationContextType {
+// Notification context type
+export interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
   testNotification: () => void;
+  connectionStatus: string;
 }
 
 // Create notification context
@@ -40,15 +41,28 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const callbackRef = useRef<((data: any) => void) | null>(null);
   const [isWebSocketSetup, setIsWebSocketSetup] = useState(false);
   const [wsStatus, setWsStatus] = useState<string>('Not connected');
+  const [connectionStatus, setConnectionStatus] = useState<string>('Initializing...');
 
   // Calculate unread count
   const unreadCount = notifications.filter(notification => !notification.read).length;
 
-  // Periodically check WebSocket status (just for logging purposes)
+  // Periodically check WebSocket status and update the connection status
   useEffect(() => {
     const checkWsStatus = setInterval(() => {
       const status = wsService.getStatus();
       setWsStatus(status);
+      
+      // Update the user-friendly connection status
+      if (status === 'Connected') {
+        setConnectionStatus('Connected to notification server');
+      } else if (status === 'Connecting') {
+        setConnectionStatus('Connecting to notification server...');
+      } else if (status === 'Closed' || status === 'Closing') {
+        setConnectionStatus('Disconnected from notification server');
+      } else {
+        setConnectionStatus(`WebSocket status: ${status}`);
+      }
+      
       console.log('Current WebSocket status:', status);
     }, 5000);
     
@@ -68,6 +82,22 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     
     return () => {
       document.removeEventListener('notification-test', handleDirectTest);
+    };
+  }, []);
+
+  // Listen for immediate notifications (like from registration)
+  useEffect(() => {
+    const handleImmediateNotification = (event: Event) => {
+      if (event instanceof CustomEvent) {
+        console.log('Received immediate notification event:', event.detail);
+        handleNewNotification(event.detail);
+      }
+    };
+    
+    document.addEventListener('notification-immediate', handleImmediateNotification);
+    
+    return () => {
+      document.removeEventListener('notification-immediate', handleImmediateNotification);
     };
   }, []);
 
@@ -131,10 +161,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           data: data.data || { email: userEmail }
         };
         
-        // Log the current notifications before updating
-        console.log('Current notifications before update:', notifications);
-        console.log('Adding new notification to state:', newNotification);
-        
         // Add to notifications list - using functional update to avoid closure issues
         setNotifications(prevNotifications => {
           const updated = [newNotification, ...prevNotifications].slice(0, 50); // Keep only last 50
@@ -143,16 +169,24 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           // Force sync to localStorage immediately
           localStorage.setItem('notifications', JSON.stringify(updated));
           
+          // Request browser notification permission if not granted yet
+          if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            Notification.requestPermission();
+          }
+          
+          // Show a browser notification if supported and permission granted
+          if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification('New User Registered', {
+                body: `${userEmail} has just registered`
+              });
+            } catch (e) {
+              console.error('Error showing browser notification:', e);
+            }
+          }
+          
           return updated;
         });
-        
-        // Debug: Check if notification was added
-        setTimeout(() => {
-          const currentNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-          console.log('Notifications in localStorage after update:', currentNotifications);
-        }, 100);
-        
-        console.log('Notification update processed');
       } else {
         console.log('Unknown notification type:', data.type);
       }
@@ -168,11 +202,22 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     // Create a static handler that won't be recreated
     const handleWebSocketNotification = (data: any) => {
       console.log('WebSocket notification received:', data);
+      
+      // Don't show an alert in normal operation, just log it
+      console.log(`Notification received: ${JSON.stringify(data)}`);
+      
       handleNewNotification(data);
     };
     
     // Store the handler in a ref so we can unsubscribe later
     callbackRef.current = handleWebSocketNotification;
+    
+    // Subscribe to notifications immediately
+    if (callbackRef.current) {
+      console.log('Subscribing to WebSocket notifications');
+      wsService.subscribe(callbackRef.current);
+      setIsWebSocketSetup(true);
+    }
     
     // Clean up on unmount
     return () => {
@@ -198,6 +243,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       }
       wsService.disconnect();
       setIsWebSocketSetup(false);
+      setConnectionStatus('Disconnected');
     };
     
     // If user is authenticated and WebSocket is not set up, set up WebSocket
@@ -211,6 +257,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const setupTimeout = setTimeout(() => {
         console.log('Connecting to WebSocket...');
         wsService.connect();
+        setConnectionStatus('Connecting...');
         
         // Subscribe to notifications after a short delay to ensure connection is established
         setTimeout(() => {
@@ -219,6 +266,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
             console.log('Subscribing to WebSocket notifications');
             wsService.subscribe(callbackRef.current);
             setIsWebSocketSetup(true);
+            setConnectionStatus('Connected and subscribed');
           }
         }, 1000);
         
@@ -238,7 +286,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       return () => {
         clearTimeout(setupTimeout);
       };
-    } 
+    }
     else if (!isAuthenticated && isWebSocketSetup) {
       // If user is not authenticated but WebSocket is set up, clean up
       console.log('User is not authenticated, cleaning up WebSocket');
@@ -280,6 +328,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     localStorage.removeItem('notifications');
   };
 
+  // Request browser notification permission if not already granted
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+  }, []);
+
   return (
     <NotificationContext.Provider
       value={{
@@ -288,7 +343,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         markAsRead,
         markAllAsRead,
         clearNotifications,
-        testNotification
+        testNotification,
+        connectionStatus
       }}
     >
       {children}
@@ -303,6 +359,26 @@ export const useNotifications = () => {
     throw new Error('useNotifications must be used within a NotificationProvider');
   }
   return context;
+};
+
+// Export a helper function to create an immediate notification for new users
+export const createNewUserNotification = (email: string) => {
+  console.log('Creating immediate notification for newly registered user:', email);
+  
+  // Create a notification object
+  const notification = {
+    type: 'NEW_USER',
+    data: { email }
+  };
+  
+  // Dispatch a custom event to notify of the new user
+  const event = new CustomEvent('notification-immediate', {
+    detail: notification
+  });
+  
+  document.dispatchEvent(event);
+  
+  return true;
 };
 
 export default NotificationContext; 

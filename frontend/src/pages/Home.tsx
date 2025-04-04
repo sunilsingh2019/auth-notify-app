@@ -1,7 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Landing from './Landing';
-import Dashboard from './Dashboard';
 
 const Home: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -21,7 +21,8 @@ const Home: React.FC = () => {
     );
   }
 
-  return isAuthenticated ? <Dashboard /> : <Landing />;
+  // Always show the landing page
+  return <Landing />;
 };
 
 export default Home;

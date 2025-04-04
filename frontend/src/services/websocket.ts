@@ -40,7 +40,7 @@ class WebSocketService {
     // Try multiple WebSocket URL approaches to ensure connectivity
     let wsUrls = [];
     
-    // Option 1: Direct to backend (most reliable)
+    // Option 1: Direct to backend (most reliable for development)
     wsUrls.push(`ws://localhost:8000/api/notifications/ws?token=${token}`);
     
     // Option 2: Relative URL from current location (for production)
@@ -48,8 +48,21 @@ class WebSocketService {
     const wsHost = window.location.host;
     wsUrls.push(`${wsProtocol}//${wsHost}/api/notifications/ws?token=${token}`);
     
-    // Option 3: Using the passed URL parameter
-    wsUrls.push(`${wsProtocol}//${wsHost}${this.url}?token=${token}`);
+    // Option 3: Using the passed URL parameter with proper protocol
+    if (this.url.startsWith('/')) {
+      wsUrls.push(`${wsProtocol}//${wsHost}${this.url}?token=${token}`);
+    } else if (!this.url.includes('://')) {
+      // If no protocol in the URL, add it
+      wsUrls.push(`${wsProtocol}//${this.url.replace(/^\/\//, '')}?token=${token}`);
+    } else {
+      wsUrls.push(`${this.url}?token=${token}`);
+    }
+    
+    // Option 4: Try a proxy approach for development environments
+    wsUrls.push(`${wsProtocol}//${wsHost}/api/ws-proxy?token=${token}`);
+    
+    // Option 5: Direct IP for local development
+    wsUrls.push(`ws://127.0.0.1:8000/api/notifications/ws?token=${token}`);
     
     console.log('WebSocket URLs to try:', wsUrls);
     
@@ -85,9 +98,26 @@ class WebSocketService {
       console.log('Creating new WebSocket with URL:', currentUrl);
       this.socket = new WebSocket(currentUrl);
 
+      // Set connection timeout
+      const connectionTimeout = setTimeout(() => {
+        console.log('WebSocket connection attempt timed out');
+        if (this.socket && this.socket.readyState !== WebSocket.OPEN) {
+          // Force close and try next URL
+          console.log('Closing timed out socket and trying next URL');
+          const socket = this.socket;
+          this.socket = null; // Clear reference before closing to prevent recursion
+          socket.onclose = null;
+          socket.close();
+          this.tryConnect(urls, index + 1);
+        }
+      }, 5000); // 5 second timeout
+
       this.socket.onopen = () => {
         console.log('WebSocket connected successfully to:', currentUrl);
         this.isConnecting = false;
+        
+        // Clear the connection timeout
+        clearTimeout(connectionTimeout);
         
         // Start sending periodic pings to keep the connection alive
         this.startPinging();
@@ -97,6 +127,9 @@ class WebSocketService {
           window.clearTimeout(this.reconnectTimer);
           this.reconnectTimer = null;
         }
+        
+        // Dispatch a connection event for debugging
+        document.dispatchEvent(new CustomEvent('websocket-connected'));
       };
 
       this.socket.onmessage = (event) => {
@@ -105,6 +138,12 @@ class WebSocketService {
           const data = JSON.parse(event.data);
           console.log('Parsed WebSocket message data:', data);
           this.notifyCallbacks(data);
+          
+          // Reset reconnect timer on successful message
+          if (this.reconnectTimer) {
+            window.clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+          }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }
@@ -113,6 +152,9 @@ class WebSocketService {
       this.socket.onclose = (event) => {
         console.log('WebSocket disconnected, code:', event.code, 'reason:', event.reason);
         this.isConnecting = false;
+        
+        // Clear the connection timeout
+        clearTimeout(connectionTimeout);
         
         // Try the next URL if this was not an intentional close
         if (event.code !== 1000) {
@@ -272,6 +314,42 @@ class WebSocketService {
       console.log('Stopping WebSocket ping interval');
       window.clearInterval(this.pingTimer);
       this.pingTimer = null;
+    }
+  }
+
+  // Add debug test function
+  testConnection(): void {
+    console.log('Testing WebSocket connection...');
+    
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      console.error('Cannot test: WebSocket is not connected');
+      alert('WebSocket is not connected! Status: ' + this.getStatus());
+      return;
+    }
+    
+    try {
+      // Send a ping message to test the connection
+      this.socket.send(JSON.stringify({
+        type: 'PING',
+        timestamp: Date.now()
+      }));
+      console.log('Ping message sent to test WebSocket connection');
+      
+      // Create and dispatch a test notification event
+      const testEvent = new CustomEvent('notification-test', {
+        detail: {
+          type: 'NEW_USER',
+          data: {
+            email: 'test-websocket@example.com'
+          }
+        }
+      });
+      
+      console.log('Dispatching test notification event');
+      document.dispatchEvent(testEvent);
+    } catch (error) {
+      console.error('Error testing WebSocket connection:', error);
+      alert('Error testing WebSocket: ' + error);
     }
   }
 }

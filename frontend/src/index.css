@@ -1079,7 +1079,7 @@ body {
 
 .app main {
   flex: 1;
-  padding: 1rem;
+  padding: 0;
   background-color: var(--background-color);
 }
 
@@ -1254,10 +1254,17 @@ body {
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: inline-block;
 }
 
 .notification-footer a:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Notifications Page Styles */
@@ -1807,4 +1814,54 @@ body {
 
 .text-button:hover {
   text-decoration: underline;
+}
+
+/* Add styles for the dashboard button in the navbar */
+.dashboard-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-button:hover {
+  background-color: #f8f9fa !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.dashboard-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dashboard-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.dashboard-button:hover::after {
+  animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  20% {
+    transform: scale(25, 25);
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(40, 40);
+  }
 }

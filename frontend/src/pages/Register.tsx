@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useWebSocket } from '../context/WebSocketContext';
+import { createNewUserNotification } from '../context/NotificationContext';
 
 const Register: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +15,7 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
 
   const { register, isAuthenticated } = useAuth();
+  const { manualConnect } = useWebSocket();
 
   // Redirect to ResendVerification page immediately after successful registration
   useEffect(() => {
@@ -35,8 +38,17 @@ const Register: React.FC = () => {
     setIsLoading(true);
     try {
       console.log('Registering user:', email);
-      await register(email, password);
-      console.log('Registration API call successful');
+      const userData = await register(email, password);
+      console.log('Registration API call successful', userData);
+      
+      // Trigger WebSocket connection
+      console.log('Manually triggering WebSocket connection');
+      manualConnect();
+      
+      // Create an immediate notification
+      console.log('Creating immediate notification for the new user');
+      createNewUserNotification(email);
+      
       setSuccessEmail(email);
       setSuccess(true);
       console.log('Success state set to true');
