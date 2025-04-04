@@ -14,8 +14,6 @@ A simple authentication-based web application with real-time notifications.
   </p>
 </div>
 
-> **Note**: To view the video directly in the application, navigate to the `/read-more` route after starting the app.
-
 ## Features
 
 - User registration and login with email verification
@@ -63,7 +61,6 @@ A simple authentication-based web application with real-time notifications.
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
-   - Tutorial Video Page: http://localhost:5173/read-more
 
 > **Note**: On first run, you might need to update the database schema. You can do this by running:
 > ```bash
@@ -87,7 +84,6 @@ A simple authentication-based web application with real-time notifications.
    - Password reset functionality
    - Email verification
    - Various notification actions
-   - View the tutorial video at http://localhost:5173/read-more
 
 ## Project Structure
 
