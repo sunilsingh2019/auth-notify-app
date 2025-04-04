@@ -83,7 +83,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (email: string, password: string) => {
     try {
       const userData = await authApi.register(email, password);
-      navigate('/login');
+      // Return the user data from registration for further action 
+      // in the Register component
+      return userData;
     } catch (error) {
       console.error('Registration error:', error);
       throw error;

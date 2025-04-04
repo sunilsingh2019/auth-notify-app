@@ -120,7 +120,8 @@ async def get_user_me(current_user: dict = Depends(services.get_current_user)):
 )
 async def verify_email(token: str = Query(..., description="Email verification token")):
     """Verify email address using token."""
-    logger.info(f"Email verification request received for token: {token[:10]}...")
+    logger.info(f"Email verification request received with token length: {len(token)}")
+    logger.info(f"Email verification token preview: {token[:10]}...")
     
     success, message = await crud.verify_email(token)
     

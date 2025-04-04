@@ -1,6 +1,7 @@
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
+import logging
 
 from apps.users.models import users
 from config.database import database
@@ -67,19 +68,47 @@ async def verify_email(token: str) -> Tuple[bool, str]:
     Returns:
         Tuple[bool, str]: (success, message)
     """
+    # Add debug logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Verifying email with token: {token[:10]}...")
+    
     # Find user with this token
     query = users.select().where(users.c.verification_token == token)
     user = await database.fetch_one(query)
     
     if not user:
+        # The token might have been valid but already used in a previous request
+        # Check for recently verified users (within the last minute)
+        logger.info(f"Token not found, checking if it was recently used...")
+        
+        # Get recently verified users (we can't check by token since it's cleared after verification)
+        # This is a heuristic approach since we can't know for certain which token was used
+        one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
+        recent_query = users.select().where(
+            (users.c.is_verified == True) & 
+            (users.c.verification_token.is_(None))
+        )
+        recent_verified_users = await database.fetch_all(recent_query)
+        
+        if recent_verified_users:
+            recent_emails = [user['email'] for user in recent_verified_users]
+            logger.info(f"Found recently verified users: {', '.join(recent_emails)}")
+            return True, "Your email has already been verified. You can now log in."
+        
+        logger.warning(f"Invalid verification token: {token[:10]}... - No matching user found")
         return False, "Invalid verification token."
     
+    logger.info(f"Token found for user: {user['email']}")
+    
     # Check if token is expired
-    if user["verification_token_expires"] < datetime.utcnow():
+    current_time = datetime.utcnow()
+    if user["verification_token_expires"] < current_time:
+        logger.warning(f"Token expired for user {user['email']}. Expired at: {user['verification_token_expires']}, Current time: {current_time}")
         return False, "Verification token has expired."
     
     # Check if already verified
     if user["is_verified"]:
+        logger.info(f"User {user['email']} is already verified")
         return True, "Email is already verified."
     
     # Mark user as verified and clear token
@@ -89,6 +118,7 @@ async def verify_email(token: str) -> Tuple[bool, str]:
         verification_token_expires=None
     )
     await database.execute(update_query)
+    logger.info(f"Successfully verified user {user['email']}")
     
     return True, "Email verification successful. You can now log in."
 

@@ -39,12 +39,15 @@ const ResendVerification: React.FC = () => {
 
   // Extract email from URL query parameters
   useEffect(() => {
+    console.log('ResendVerification: location changed', location.search);
     const params = new URLSearchParams(location.search);
     const emailParam = params.get('email');
     if (emailParam) {
+      console.log('ResendVerification: email param found', emailParam);
       setEmail(emailParam);
       // Optionally auto-submit the form if redirected from registration
       if (params.get('auto') === 'true') {
+        console.log('ResendVerification: auto param found, submitting form');
         handleSubmit(null, true);
       }
     }

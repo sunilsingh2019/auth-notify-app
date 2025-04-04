@@ -17,6 +17,8 @@ const Register: React.FC = () => {
   // Redirect to ResendVerification page immediately after successful registration
   useEffect(() => {
     if (success) {
+      console.log('Registration successful, redirecting to resend verification page');
+      console.log('Email:', successEmail);
       navigate(`/resend-verification?email=${encodeURIComponent(successEmail)}&auto=true`);
     }
   }, [success, successEmail, navigate]);
@@ -32,11 +34,20 @@ const Register: React.FC = () => {
 
     setIsLoading(true);
     try {
+      console.log('Registering user:', email);
       await register(email, password);
+      console.log('Registration API call successful');
       setSuccessEmail(email);
       setSuccess(true);
+      console.log('Success state set to true');
+      
+      // Force immediate navigation instead of waiting for useEffect
+      console.log('Directly navigating to resend verification page');
+      const redirectUrl = `/resend-verification?email=${encodeURIComponent(email)}&auto=true`;
+      navigate(redirectUrl);
+      
     } catch (err: any) {
-      console.error(err);
+      console.error('Registration error:', err);
       setError(err.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);

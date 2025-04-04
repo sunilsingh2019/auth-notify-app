@@ -6,6 +6,7 @@ const VerifyEmail: React.FC = () => {
   const [verifying, setVerifying] = useState(true);
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState('Verifying your email...');
+  const [verificationAttempted, setVerificationAttempted] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -15,22 +16,63 @@ const VerifyEmail: React.FC = () => {
         const params = new URLSearchParams(location.search);
         const token = params.get('token');
 
+        console.log(`Verification attempt starting with token preview: ${token?.substring(0, 10)}...`);
+
         if (!token) {
+          console.log("Verification token is missing in URL");
           setMessage('Verification token is missing.');
           setVerifying(false);
           return;
         }
+        
+        // Check if this token was already verified (stored in localStorage)
+        const verifiedTokens = JSON.parse(localStorage.getItem('verifiedTokens') || '{}');
+        if (verifiedTokens[token]) {
+          console.log("Token was already verified according to localStorage");
+          setSuccess(true);
+          setMessage(verifiedTokens[token]);
+          setVerifying(false);
+          
+          // Redirect to login after 3 seconds
+          setTimeout(() => {
+            console.log("Redirecting to login page after cached verification");
+            navigate('/login');
+          }, 3000);
+          
+          return;
+        }
 
+        // Skip if verification was already attempted in this session
+        if (verificationAttempted) {
+          console.log("Verification already attempted in this session, skipping duplicate request");
+          return;
+        }
+
+        // Mark that we've attempted verification to prevent duplicate requests
+        setVerificationAttempted(true);
+
+        console.log("Sending verification request to API...");
         const response = await axios.get(`/api/auth/verify-email?token=${token}`);
+        console.log("Verification API response:", response.data);
+        
         setSuccess(response.data.success);
         setMessage(response.data.message);
         setVerifying(false);
 
-        // Redirect to login after successful verification
+        // Store successful verifications in localStorage to prevent duplicate attempts
         if (response.data.success) {
+          console.log("Storing successful verification in localStorage");
+          verifiedTokens[token] = response.data.message;
+          localStorage.setItem('verifiedTokens', JSON.stringify(verifiedTokens));
+          
+          // Redirect to login after successful verification
+          console.log("Verification successful, will redirect to login in 3 seconds");
           setTimeout(() => {
+            console.log("Redirecting to login page now");
             navigate('/login');
           }, 3000);
+        } else {
+          console.log("Verification failed:", response.data.message);
         }
       } catch (error) {
         console.error('Verification error:', error);
@@ -40,7 +82,7 @@ const VerifyEmail: React.FC = () => {
     };
 
     verifyEmail();
-  }, [location.search, navigate]);
+  }, [location.search, navigate, verificationAttempted]);
 
   return (
     <div className="verify-email-container">
@@ -85,4 +127,4 @@ const VerifyEmail: React.FC = () => {
   );
 };
 
-export default VerifyEmail; 
+export default VerifyEmail;
