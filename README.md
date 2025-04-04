@@ -4,9 +4,17 @@ A simple authentication-based web application with real-time notifications.
 
 ## Demo Video
 
-[![Auth Notification App Demo](https://img.youtube.com/vi/hL7ZaWSwUvU/0.jpg)](https://youtu.be/hL7ZaWSwUvU)
+<div align="center">
+  <a href="https://youtu.be/hL7ZaWSwUvU">
+    <img src="https://img.youtube.com/vi/hL7ZaWSwUvU/maxresdefault.jpg" alt="Auth Notification App Demo" style="max-width:100%;">
+  </a>
+  <p>
+    <strong>▶️ Click the image above to watch the tutorial video</strong><br>
+    <em>Learn how to set up and use all features of the application</em>
+  </p>
+</div>
 
-Click the image above to watch a video demonstration of the application's features and setup process.
+> **Note**: To view the video directly in the application, navigate to the `/read-more` route after starting the app.
 
 ## Features
 
@@ -55,6 +63,7 @@ Click the image above to watch a video demonstration of the application's featur
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
+   - Tutorial Video Page: http://localhost:5173/read-more
 
 > **Note**: On first run, you might need to update the database schema. You can do this by running:
 > ```bash
@@ -78,6 +87,7 @@ Click the image above to watch a video demonstration of the application's featur
    - Password reset functionality
    - Email verification
    - Various notification actions
+   - View the tutorial video at http://localhost:5173/read-more
 
 ## Project Structure
 
@@ -97,7 +107,7 @@ Click the image above to watch a video demonstration of the application's featur
 │   │   ├── /pages          # Page-level components
 │   │   ├── /services       # API calls
 │   │   ├── /context        # Auth & WebSocket context
-│── docker-compose.yml      # Docker setup for full stack
+│   ├── docker-compose.yml  # Docker setup for full stack
 ```
 
 ## API Endpoints
@@ -180,7 +190,3 @@ The API documentation is available via Swagger UI at http://localhost:8000/docs 
 - Try out the WebSocket connection
 
 For a more detailed, alternative API documentation, you can also visit http://localhost:8000/redoc
-
-## Video Tutorial
-
-For a step-by-step guide on setting up and using this application, watch our [tutorial video on YouTube](https://youtu.be/hL7ZaWSwUvU).
