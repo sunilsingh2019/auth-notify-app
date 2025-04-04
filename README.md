@@ -5,9 +5,7 @@ A simple authentication-based web application with real-time notifications.
 ## Demo Video
 
 <div align="center">
-  <a href="https://youtu.be/hL7ZaWSwUvU">
-    <img src="https://img.youtube.com/vi/hL7ZaWSwUvU/maxresdefault.jpg" alt="Auth Notification App Demo" style="max-width:100%;">
-  </a>
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/hL7ZaWSwUvU?si=wb5nmcmiYGCra1CC" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
   <p>
     <strong>▶️ Click the image above to watch the tutorial video</strong><br>
     <em>Learn how to set up and use all features of the application</em>
